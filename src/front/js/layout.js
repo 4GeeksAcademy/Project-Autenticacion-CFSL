@@ -20,17 +20,23 @@ const Layout = () => {
     if(!process.env.BACKEND_URL || process.env.BACKEND_URL == "") return <BackendURL/ >;
 
     return (
-        <div>
+        <div  style={{ width: '100vw', height: '100vh', backgroundColor: '#f0f0f0' }}>
             <BrowserRouter basename={basename}>
                 <ScrollToTop>
+                    
                     <Navbar />
+                    <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                    <div className="d-flex flex-column justify-content-center align-items-center" style={{ width: '50vw', backgroundColor: '#e4e4eb' }}>
                     <Routes>
                         <Route element={<Home />} path="/" />
                         <Route element={<Demo />} path="/demo" />
                         <Route element={<Single />} path="/single/:theid" />
                         <Route element={<h1>Not found!</h1>} />
                     </Routes>
+                    </div>
+                    </div>
                     <Footer />
+                    
                 </ScrollToTop>
             </BrowserRouter>
         </div>

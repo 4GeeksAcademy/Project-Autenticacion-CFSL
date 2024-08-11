@@ -5,6 +5,8 @@ from flask import Flask, request, jsonify, url_for, Blueprint
 from api.models import db, User
 from api.utils import generate_sitemap, APIException
 from flask_cors import CORS
+from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required
+
 
 api = Blueprint('api', __name__)
 
@@ -20,3 +22,54 @@ def handle_hello():
     }
 
     return jsonify(response_body), 200
+
+@api.route('/login', methods=['POST'])
+def login():
+    email = request.json.get('email', None)
+    password = request.json.get('password', None)
+    #user = User.query.filter_by(email=email, password=password).first()
+    user= User.query.filter_by(email=email).first()
+    if user:
+        if(user.password == password):
+            access_token = create_access_token(identity=user.id)
+            return jsonify({'success': True, 'user': user.serialize(), 'token':access_token}), 200
+        return jsonify({'success': False, 'msg': 'Combinacion usuario-contraseña no valida'}), 400
+    return jsonify({'succes': False, 'msg':'El correo electronico no tiene una cuenta asociada'}), 404
+
+@api.route('/signup', methods=['POST'])
+def signup():
+    email = request.json.get('email', None)
+    password = request.json.get('password', None)
+    
+    if not email or not password:
+        return jsonify({'success': False, 'msg': 'Todos los campos son necesarios'}), 400
+    
+    user= User.query.filter_by(email=email).first()
+
+    if user:
+        return jsonify({'succes': False, 'msg':'El correo electronico ya tiene una cuenta, inicia sesion'}), 400
+    new_user = User(email=email, password=password, is_active=True) 
+    db.session.add(new_user)
+    db.session.commit()
+    access_token = create_access_token(identity=new_user.id) #al crear usuario, al registrarse ya estas logeado, es decir accedes a la pagina directamente
+    return jsonify({'success': True, 'user': new_user.serialize(), 'token':access_token}), 200
+    
+#para verificar si el token es valido o no
+@api.route('/token', methods=['GET'])
+@jwt_required()
+def check_jwt():
+    user_id= get_jwt_identity()
+    user=User.query.get(user_id)
+    if user:
+        return jsonify({'success': True, 'user': user.serialize()}), 200
+    return jsonify({'success': False, 'msg': 'Bad Token'}),401 
+
+@api.route('/protected', methods=['GET'])
+@jwt_required()
+def handle_protected():
+    user_id= get_jwt_identity()
+    user=User.query.get(user_id)
+    if user:
+        print(user.serialize())
+        return jsonify({'success': True,'msg': 'Has logrado acceder a una ruta protegida '})
+    return jsonify({'success': False, 'msg':'Has logrado acceder a una ruta protegida '})

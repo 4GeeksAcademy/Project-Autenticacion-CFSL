@@ -1,17 +1,29 @@
+import atletismo from "../../img/atletismo.png";
+import natacion from "../../img/natacion.jpg";
+import ciclismo from "../../img/ciclismo.jpeg";
+
 const getState = ({ getStore, getActions, setStore }) => {
 	return {
 		store: {
 			message: null,
 			demo: [
 				{
-					title: "FIRST",
+					title: "ATLETISMO",
 					background: "white",
-					initial: "white"
+					initial: "white",
+					imageUrl: atletismo
 				},
 				{
-					title: "SECOND",
+					title: "NATACION",
 					background: "white",
-					initial: "white"
+					initial: "white",
+					imageUrl: natacion
+				},
+				{
+					title: "CICLISMO",
+					background: "white",
+					initial: "white",
+					imageUrl: ciclismo
 				}
 			]
 		},
@@ -33,19 +45,74 @@ const getState = ({ getStore, getActions, setStore }) => {
 					console.log("Error loading message from backend", error)
 				}
 			},
-			changeColor: (index, color) => {
-				//get the store
-				const store = getStore();
 
-				//we have to loop the entire demo array to look for the respective index
-				//and change its color
-				const demo = store.demo.map((elm, i) => {
-					if (i === index) elm.background = color;
-					return elm;
-				});
+			logout: () => {
+				localStorage.removeItem('token')
+				setStore({user:null, token:null})
+				return true
+			},
 
-				//reset the global store
-				setStore({ demo: demo });
+			register: async (formData) => {
+				try{
+					// fetching data from the backend
+
+					const resp = await fetch(process.env.BACKEND_URL + "/api/signup", {
+						headers: {
+							'Content-Type': 'application/json'
+						},
+						method: 'POST',
+						body: JSON.stringify(formData)
+					})
+					const data = await resp.json()
+					setStore({ user: data.user, token: data.token })
+					localStorage.setItem('token', data.token)
+					
+					// don't forget to return something, that is how the async resolves
+					return data;
+				}catch(error){
+					console.log("Error loading message from backend", error)
+				}
+			},
+			checkAuth: async(token) => {
+				try{
+					// fetching data from the backend
+					//const token = getStore().token || localStorage.getItem('token')
+					const resp = await fetch(process.env.BACKEND_URL + "/api/token", {
+						headers: {
+							'Content-Type': 'application/json',
+							'Authorization': `Bearer ${token}`
+						},
+						method: 'GET',
+					})
+					if (resp.status != 200) return false
+					const data = await resp.json()
+					console.log(data)
+					return data;
+				}catch(error){
+					console.log("Error loading message from backend", error)
+				}
+
+			},
+			login: async (formData) => {
+				try{
+					// fetching data from the backend
+
+					const resp = await fetch(process.env.BACKEND_URL + "/api/login", {
+						headers: {
+							'Content-Type': 'application/json'
+						},
+						method: 'POST',
+						body: JSON.stringify(formData)
+					})
+					const data = await resp.json()
+					setStore({ user: data.user, token: data.token })
+					localStorage.setItem('token', data.token)
+					
+					// don't forget to return something, that is how the async resolves
+					return data;
+				}catch(error){
+					console.log("Error loading message from backend", error)
+				}
 			}
 		}
 	};
