@@ -17,6 +17,11 @@ export const Demo = () => {
 		if (!localStorage.getItem('token')) return navigate('/')
 		check()
 	},[])
+
+	const handleLogout = () => {
+        actions.logout();
+        navigate('/');
+    };
 	return (
 		<div className="container">
 			<div className="text-center mt-5">
@@ -45,6 +50,7 @@ export const Demo = () => {
 			
 				<button className="btn btn-primary mb-3">Back home</button>
 			</Link>
+			<button className="btn btn-dark mb-3" onClick={handleLogout}>Log Out</button>
 		</div>
 	);
 };

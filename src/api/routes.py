@@ -6,6 +6,8 @@ from api.models import db, User
 from api.utils import generate_sitemap, APIException
 from flask_cors import CORS
 from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required
+from werkzeug.security import generate_password_hash
+from werkzeug.security import check_password_hash
 
 
 api = Blueprint('api', __name__)
@@ -29,12 +31,10 @@ def login():
     password = request.json.get('password', None)
     #user = User.query.filter_by(email=email, password=password).first()
     user= User.query.filter_by(email=email).first()
-    if user:
-        if(user.password == password):
-            access_token = create_access_token(identity=user.id)
-            return jsonify({'success': True, 'user': user.serialize(), 'token':access_token}), 200
-        return jsonify({'success': False, 'msg': 'Combinacion usuario-contraseña no valida'}), 400
-    return jsonify({'succes': False, 'msg':'El correo electronico no tiene una cuenta asociada'}), 404
+    if user and check_password_hash(user.password, password):
+        access_token = create_access_token(identity=user.id)
+        return jsonify({'success': True, 'user': user.serialize(), 'token':access_token}), 200
+    return jsonify({'success': False, 'msg': 'Invalid email or password'}), 401
 
 @api.route('/signup', methods=['POST'])
 def signup():
@@ -48,7 +48,8 @@ def signup():
 
     if user:
         return jsonify({'succes': False, 'msg':'El correo electronico ya tiene una cuenta, inicia sesion'}), 400
-    new_user = User(email=email, password=password, is_active=True) 
+    hashed_password = generate_password_hash(password)
+    new_user = User(email=email, password=hashed_password, is_active=True)
     db.session.add(new_user)
     db.session.commit()
     access_token = create_access_token(identity=new_user.id) #al crear usuario, al registrarse ya estas logeado, es decir accedes a la pagina directamente
